@@ -1,0 +1,41 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: use node.js 16.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16.x
+        registry-url: https://registry.npmjs.org/ 
+
+    - name: yarn install
+      uses: backstage/actions/yarn-install@v0.5.13
+      with:
+        cache-prefix: ${{ runner.os }}-v16
+    - run: yarn tsc
+    - run: yarn build:backend
+
+    - name: docker login
+      env:
+        DOCKER_USER: ${{secrets.DOCKER_USER}}
+        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD 
+    - name: Build the Docker image
+      env:
+        DOCKER_BUILDKIT: 1
+      run: docker image build . -f packages/backend/Dockerfile --tag angeliski/angeliski-stage:$(git rev-parse --short HEAD)
+      
+    - name: Docker Push
+      run: docker push --all-tags angeliski/angeliski-stage
