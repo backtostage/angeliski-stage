@@ -21,7 +21,8 @@
     "lint:all": "backstage-cli repo lint",
     "prettier:check": "prettier --check .",
     "create-plugin": "backstage-cli create-plugin --scope internal",
-    "new": "backstage-cli new --scope internal"
+    "new": "backstage-cli new --scope internal",
+    "versions:bump": "backstage-cli versions:bump"
   },
   "workspaces": {
     "packages": [
@@ -30,7 +31,7 @@
     ]
   },
   "devDependencies": {
-    "@backstage/cli": "^0.21.0",
+    "@backstage/cli": "^0.22.7",
     "@spotify/prettier-config": "^12.0.0",
     "concurrently": "^6.0.0",
     "lerna": "^4.0.0",
