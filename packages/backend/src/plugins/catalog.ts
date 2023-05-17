@@ -10,18 +10,24 @@ export default async function createPlugin(
 ): Promise<Router> {
   const builder = await CatalogBuilder.create(env);
 
-     builder.addEntityProvider(
-         GithubEntityProvider.fromConfig(env.config, {
-           logger: env.logger,
-           schedule: env.scheduler.createScheduledTaskRunner({
-             frequency: { minutes: 30 },
-             timeout: { minutes: 3 },
-           }),
-         }),
+    let githubProvider = GithubEntityProvider.fromConfig(env.config, {
+        logger: env.logger,
+        schedule: env.scheduler.createScheduledTaskRunner({
+            frequency: { minutes: 30 },
+            timeout: { minutes: 3 },
+        }),
+    });
+
+    builder.addEntityProvider(
+        githubProvider,
        );
 
+    env.eventBroker.subscribe(githubProvider);
+
   builder.addProcessor(new ScaffolderEntitiesProcessor());
+  builder.setProcessingIntervalSeconds(7200)
   const { processingEngine, router } = await builder.build();
+
   await processingEngine.start();
   return router;
 }
