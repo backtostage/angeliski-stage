@@ -28,9 +28,11 @@ import scaffolder from './plugins/scaffolder';
 import proxy from './plugins/proxy';
 import techdocs from './plugins/techdocs';
 import search from './plugins/search';
+import events from './plugins/events';
 import { PluginEnvironment } from './types';
 import { ServerPermissionClient } from '@backstage/plugin-permission-node';
 import { DefaultIdentityClient } from '@backstage/plugin-auth-node';
+import {DefaultEventBroker} from "@backstage/plugin-events-backend";
 
 function makeCreateEnv(config: Config) {
   const root = getRootLogger();
@@ -49,6 +51,8 @@ function makeCreateEnv(config: Config) {
     tokenManager,
   });
 
+  const eventBroker = new DefaultEventBroker(root.child({ type: 'plugin' }));
+
   root.info(`Created UrlReader ${reader}`);
 
   return (plugin: string): PluginEnvironment => {
@@ -61,6 +65,7 @@ function makeCreateEnv(config: Config) {
       database,
       cache,
       config,
+      eventBroker,
       reader,
       discovery,
       tokenManager,
@@ -84,6 +89,8 @@ async function main() {
   const proxyEnv = useHotMemoize(module, () => createEnv('proxy'));
   const techdocsEnv = useHotMemoize(module, () => createEnv('techdocs'));
   const searchEnv = useHotMemoize(module, () => createEnv('search'));
+  const eventsEnv = useHotMemoize(module, () => createEnv('events'));
+
   const appEnv = useHotMemoize(module, () => createEnv('app'));
 
   const apiRouter = Router();
@@ -92,6 +99,7 @@ async function main() {
   apiRouter.use('/auth', await auth(authEnv));
   apiRouter.use('/techdocs', await techdocs(techdocsEnv));
   apiRouter.use('/proxy', await proxy(proxyEnv));
+  apiRouter.use('/events', await events(eventsEnv));
   apiRouter.use('/search', await search(searchEnv));
 
   // Add backends ABOVE this line; this 404 handler is the catch-all fallback
